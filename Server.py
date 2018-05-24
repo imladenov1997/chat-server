@@ -4,26 +4,33 @@ import socket
 import threading
 
 class socketThread(threading.Thread):
-    def __init__(self, c, threadID):
+    def __init__(self, clientSocket, threadID):
         threading.Thread.__init__(self)
-        self.c = c
+        self.clientSocket = clientSocket
         self.threadID = threadID
 
 
     def run(self):
-        c.send(str(self.threadID).encode())
+        self.clientSocket.send(str(self.threadID).encode())
         socketList = list(sockets.keys())
         socketData = pickle.dumps(socketList)
-        c.send(socketData)
+        self.clientSocket.send(socketData)
 
 class listeningThread(threading.Thread):
-    def __init__(self, c, threadID):
+    def __init__(self, clientSocket, threadID):
         threading.Thread.__init__(self)
-        self.c = c
+        self.clientSocket = clientSocket
         self.threadID = threadID
 
     def run(self):
-        c.recv()
+        while True:
+            msg = self.clientSocket.recv(4096)
+            self.broadcast(msg, sockets, self.clientSocket)
+
+    def broadcast(self, msg, socket_set, sendingSocket):
+        for x in socket_set:
+            if socket_set[x] != sendingSocket:
+                socket_set[x].send(msg)
 
 messages = []
 sockets = {}
@@ -36,10 +43,12 @@ s.listen(5)
 
 while True:
     c, addr = s.accept()
-    print("Connected from addr")
+    print("User connected")
     threadID = random.randrange(0,100)
-    thread = socketThread(c, threadID)
-    sockets[threadID] = thread
-    thread.start()
+    threadSender = socketThread(c, threadID)
+    threadListener = listeningThread(c, threadID)
+    sockets[threadID] = c
+    threadSender.start()
+    threadListener.start()
 
 

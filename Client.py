@@ -20,20 +20,22 @@ class sender(threading.Thread):
     def run(self):
         while True:
             msg = input('')
-            self.clientSocket.send((self.socketID))
+            self.clientSocket.send((self.name + ": " + msg).encode())
 
 class listener(threading.Thread):
-    def __init(self, clientSocket, socketID):
+    def __init__(self, clientSocket, socketID):
         threading.Thread.__init__(self)
         self.clientSocket = clientSocket
         self.socketID = socketID
 
     def run(self):
         while True:
-            msg = self.clientSocket.recv(4096)
+            msg = self.clientSocket.recv(4096).decode()
+            print(msg)
+
 
 
 senderSocket = sender(s, socketID, name)
 senderSocket.start()
-
-print(senderSocket)
+listenerSocket = listener(s, socketID)
+listenerSocket.start()
